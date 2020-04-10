@@ -25,6 +25,7 @@ export DEMO_APP_KV=nz2807-linux-demo-kv
 export KV_SECRET_APP_MESSAGE="APP-MESSAGE"
 export KV_SECRET_APP_MESSAGE_VALUE="This is a test app message"
 export KV_SECRET_APP_MESSAGE_VAR="APP_MESSAGE"
+export KV_SECRET_APP_KV_NAME_VAR="KV_NAME"
 
 # Create Resource Group
 az group create -l $LOCATION -n $APP_PE_DEMO_RG
@@ -39,10 +40,9 @@ az network vnet subnet create -g $APP_PE_DEMO_RG --vnet-name $DEMO_VNET -n $DEMO
 
 # Create VM to host
 # - DNS
-# - Java
+# - NodeJS
 # - VS Code
 # - Azure CLI
-# - Maven
 az vm create -n $DEMO_APP_VM -g $APP_PE_DEMO_RG --image MicrosoftWindowsServer:WindowsServer:2019-Datacenter:latest \
     --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET --public-ip-sku Standard --size $DEMO_VM_SIZE --admin-username $DEMO_APP_VM_ADMIN
 
@@ -116,7 +116,8 @@ az keyvault set-policy -g  $APP_PE_DEMO_RG --name $DEMO_APP_KV --object-id $APP_
 az storage account show-connection-string -g $APP_PE_DEMO_RG -n $DEMO_APP_STORAGE_ACCT
 
 # Create Web App variable
-az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_MESSAGE_VAR="@Microsoft.KeyVault(SecretUri="$KV_RESOURCE_ID")"
+az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_MESSAGE_VAR="$KV_SECRET_APP_MESSAGE"
+az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_KV_NAME_VAR="$DEMO_APP_KV"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME \
     --settings $DEMO_APP_STORAGE_CONFIG="[Use Connection String From Last Step]"
 
