@@ -58,10 +58,10 @@ az vm create -n $DEMO_APP_VM -g $APP_PE_DEMO_RG --image MicrosoftWindowsServer:W
 ################ Complete the VM Setup before moving next #######################
 
 # Create the storage account to be used by all the functions for housekeeping
-az storage account create --name $DEMO_FUNC_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS
+az storage account create --name $DEMO_FUNC_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS --kind StorageV2
 
 # Create the storage account to be used by the function with storage Blob trigger
-az storage account create --name $DEMO_APP_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS
+az storage account create --name $DEMO_APP_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS --kind StorageV2
 
 # Create Blob container for trigger
 az storage container create --account-name $DEMO_APP_STORAGE_ACCT --name datafiles --auth-mode login
