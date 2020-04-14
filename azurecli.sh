@@ -1,6 +1,3 @@
-az login
-az account set --subscription fbd6916d-a76d-48f0-9b03-f1d9610d7970
-
 export APP_PE_DEMO_RG=nz2807-funcdemo-rg
 export LOCATION=eastus  
 export DEMO_VNET=nz2807-funcdemo-vnet
@@ -11,7 +8,7 @@ export DEMO_VNET_PL_SUBNET=pl_subnet
 export DEMO_VNET_PL_SUBNET_CIDR=10.1.2.0/24
 
 export DEMO_FUNC_PLAN=nz2807-prem-func-plan
-export DEMO_APP_STORAGE_ACCT=nz2807appstore
+export DEMO_APP_STORAGE_ACCT=nz2807appsstore
 export DEMO_FUNC_STORAGE_ACCT=nz2807funcstore
 export DEMO_FUNC_NAME=nz2807-demofunc-app
 export DEMO_APP_STORAGE_CONFIG="FileStore"
@@ -90,7 +87,7 @@ az functionapp create --name $DEMO_FUNC_NAME --storage-account $DEMO_FUNC_STORAG
 az functionapp identity assign -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME
 
 # Capture identity from output
-export APP_MSI="7b36adbe-cd1f-4bfe-a7bb-10a6fe7324c9"
+export APP_MSI="d4ed2629-c051-4537-bf7c-f7f5721b68e7"
 
 # Use Azure Function CLI Tools to deploy the app
 func azure functionapp publish $DEMO_FUNC_NAME
@@ -107,7 +104,7 @@ export KV_RESOURCE_ID="https://nz2807-linux-demo-kv.vault.azure.net/secrets/APP-
 
 # Capture the KV URI
 # az keyvault show --name $DEMO_APP_KV --resource-group $APP_PE_DEMO_RG
-export KV_URI="/subscriptions/fbd6916d-a76d-48f0-9b03-f1d9610d7970/resourceGroups/nz2807-pedemo-rg/providers/Microsoft.KeyVault/vaults/nz2807-linux-demo-kv"
+export KV_URI="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nz2807-funcdemo-rg/providers/Microsoft.KeyVault/vaults/nz2807-linux-demo-kv"
 
 # Set Policy for Web App to access secrets
 az keyvault set-policy -g  $APP_PE_DEMO_RG --name $DEMO_APP_KV --object-id $APP_MSI --secret-permissions get list --verbose
@@ -119,7 +116,7 @@ az storage account show-connection-string -g $APP_PE_DEMO_RG -n $DEMO_APP_STORAG
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_MESSAGE_VAR="$KV_SECRET_APP_MESSAGE"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_KV_NAME_VAR="$DEMO_APP_KV"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME \
-    --settings $DEMO_APP_STORAGE_CONFIG="[Use Connection String From Last Step]"
+    --settings $DEMO_APP_STORAGE_CONFIG="XXXX"
 
 #
 # Create Private Links
@@ -135,18 +132,22 @@ az network private-endpoint create -g $APP_PE_DEMO_RG -n kvpe --vnet-name $DEMO_
 
 # Create App Storage Private Links
 # Get the Resource ID of the App Storage from the Portal, assign it to APP_STORAGE_RESOURCE_ID and create private link
-export APP_STORAGE_RESOURCE_ID="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nzapppldemo-rg/providers/Microsoft.Storage/storageAccounts/nzfuncfilestore"
+export APP_STORAGE_RESOURCE_ID="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nz2807-funcdemo-rg/providers/Microsoft.Storage/storageAccounts/nz2807appsstore"
 az network private-endpoint create -g $APP_PE_DEMO_RG -n funcblobpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
     --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name funcblobpeconn -l $LOCATION --group-id "blob"
 az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
     --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name functableconn -l $LOCATION --group-id "table"
 
 # Creating Forward Lookup Zones in the DNS server you created above
+# You may be using root hints for DNS resolution on your custom DNS server.
+# Please add 168.63.129.16 as default forwarder on you custom DNS server.
+# https://docs.microsoft.com/en-us/powershell/module/dnsserver/set-dnsserverforwarder?view=win10-ps
+
 #   Create the zone for: vault.azure.net
 #       Create an A Record for the Key Vault with the name and its private endpoint address
 
 # Switch to custom DNS on VNET
-export DEMO_APP_VM_IP="10.0.2.4"
+export DEMO_APP_VM_IP="10.1.2.4"
 az network vnet update -g $APP_PE_DEMO_RG -n $DEMO_VNET --dns-servers $DEMO_APP_VM_IP
 
 #
