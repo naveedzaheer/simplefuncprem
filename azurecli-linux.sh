@@ -116,7 +116,7 @@ az storage account show-connection-string -g $APP_PE_DEMO_RG -n $DEMO_APP_STORAG
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_MESSAGE_VAR="$KV_SECRET_APP_MESSAGE"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_KV_NAME_VAR="$DEMO_APP_KV"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME \
-    --settings $DEMO_APP_STORAGE_CONFIG="DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=nz2807linuxappsstore;AccountKey=zaiDGxPU+QcrUgTicY+4fq6l3L2BvKkPYmRR4Tu2E/jnmT21HpsHkNN+8pdatcp3Gc4mgDHqTVx2PvvJCEmgIQ=="
+    --settings $DEMO_APP_STORAGE_CONFIG="xxxxxxx"
 
 # Set Private DNS Zone Settings
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings "WEBSITE_DNS_SERVER"="168.63.129.16"
