@@ -87,7 +87,7 @@ az functionapp create --name $DEMO_FUNC_NAME --storage-account $DEMO_FUNC_STORAG
 az functionapp identity assign -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME
 
 # Capture identity from output
-export APP_MSI="9e995fe8-e08e-4322-9e15-ee732d946c1c"
+export APP_MSI="7a31e467-0ed8-4656-aa43-b3dca8fe29aa"
 
 # Use Azure Function CLI Tools to deploy the app
 func azure functionapp publish $DEMO_FUNC_NAME
@@ -116,7 +116,7 @@ az storage account show-connection-string -g $APP_PE_DEMO_RG -n $DEMO_APP_STORAG
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_MESSAGE_VAR="$KV_SECRET_APP_MESSAGE"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_KV_NAME_VAR="$DEMO_APP_KV"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME \
-    --settings $DEMO_APP_STORAGE_CONFIG="XXXX"
+    --settings $DEMO_APP_STORAGE_CONFIG="DefaultEndpointsProtocol=https;AccountName=nz2807winappsstore;AccountKey=pnUinyeWkA8twfugV0I++4rXiAHdPdfvY8mPQ8WfU6fnEUvPvojdSaZ535srq5OUGHHhV+gD9bxgtL5fIBPeXw==;EndpointSuffix=core.windows.net"
 
 # Set Private DNS Zone Settings
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings "WEBSITE_DNS_SERVER"="168.63.129.16"
@@ -154,19 +154,19 @@ az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name
 # az network vnet update -g $APP_PE_DEMO_RG -n $DEMO_VNET --dns-servers $DEMO_APP_VM_IP
 
 # Private DNS Zones
-export PRIVATE_KV_IP="10.0.2.4"
+export PRIVATE_KV_IP="10.1.2.4"
 export AZUREKEYVAULT_ZONE=privatelink.vaultcore.azure.net
 az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREKEYVAULT_ZONE
 az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREKEYVAULT_ZONE -n $DEMO_APP_KV -a $PRIVATE_KV_IP
 az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREKEYVAULT_ZONE --name kvdnsLink --registration-enabled false
 
-export PRIVATE_BLOB_IP="10.0.2.5"
+export PRIVATE_BLOB_IP="10.1.2.5"
 export AZUREBLOB_ZONE=privatelink.blob.core.windows.net
 az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREBLOB_ZONE
 az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREBLOB_ZONE -n $DEMO_APP_STORAGE_ACCT -a $PRIVATE_BLOB_IP
 az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREBLOB_ZONE --name blobdnsLink --registration-enabled false
 
-export PRIVATE_TABLE_IP="10.0.2.6"
+export PRIVATE_TABLE_IP="10.1.2.6"
 export AZURETABLE_ZONE=privatelink.table.core.windows.net
 az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZURETABLE_ZONE
 az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZURETABLE_ZONE -n $DEMO_APP_STORAGE_ACCT -a $PRIVATE_TABLE_IP
