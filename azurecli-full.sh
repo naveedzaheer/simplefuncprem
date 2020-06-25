@@ -189,6 +189,8 @@ az functionapp show -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME
 export FUNC_APP_RESOURCE_ID="/subscriptions/"$APP_SUBSCRIPTION_ID"/resourceGroups/"$APP_PE_DEMO_RG"/providers/Microsoft.Web/sites/"$DEMO_FUNC_NAME
 
 ##################################################################################################
+# !!!!!!!!!!!!!!!!!!!!!!!!Stop Here Before Creating the Private Endpoint for Function!!!!!!!!!!!!!
+# You should now use VSCode or function cli to push the nodejs function to the Function App
 # Test the App to make sure that functions are running
 ##################################################################################################
 
