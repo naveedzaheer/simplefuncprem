@@ -1,23 +1,23 @@
-export APP_PE_DEMO_RG=nz2807win-funcdemo-rg
+export APP_PE_DEMO_RG=nznostorelinux-funcdemo-rg
 export LOCATION=eastus2  
-export DEMO_VNET=nz2807win-funcdemo-vnet
-export DEMO_VNET_CIDR=10.1.0.0/16
+export DEMO_VNET=nznostorelinux-funcdemo-vnet
+export DEMO_VNET_CIDR=10.2.0.0/16
 export DEMO_VNET_APP_SUBNET=app_subnet
-export DEMO_VNET_APP_SUBNET_CIDR=10.1.1.0/24
+export DEMO_VNET_APP_SUBNET_CIDR=10.2.1.0/24
 export DEMO_VNET_PL_SUBNET=pl_subnet
-export DEMO_VNET_PL_SUBNET_CIDR=10.1.2.0/24
+export DEMO_VNET_PL_SUBNET_CIDR=10.2.2.0/24
 
-export DEMO_FUNC_PLAN=nz2807win-prem-func-plan
-export DEMO_APP_STORAGE_ACCT=nz2807winappsstore
-export DEMO_FUNC_STORAGE_ACCT=nz2807winfuncstore
-export DEMO_FUNC_NAME=nz2807win-demofunc-app
+export DEMO_FUNC_PLAN=nznostorelinux-prem-func-plan
+export DEMO_APP_STORAGE_ACCT=nznostorelinuxappsstore
+export DEMO_FUNC_STORAGE_ACCT=nznostorelinuxfuncstore
+export DEMO_FUNC_NAME=nznostorelinux-demofunc-app
 export DEMO_APP_STORAGE_CONFIG="FileStore"
 
 export DEMO_APP_VM=pldemovm
 export DEMO_APP_VM_ADMIN=azureuser
 export DEMO_VM_IMAGE=MicrosoftWindowsServer:WindowsServer:2019-Datacenter:latest
 export DEMO_VM_SIZE=Standard_DS2_v2
-export DEMO_APP_KV=nz2807win-demo-kv1
+export DEMO_APP_KV=nznostorelinux-kvfunc1
 
 export KV_SECRET_APP_MESSAGE="APP-MESSAGE"
 export KV_SECRET_APP_MESSAGE_VALUE="This is a test app message"
@@ -58,25 +58,25 @@ az network vnet subnet create -g $APP_PE_DEMO_RG --vnet-name $DEMO_VNET -n $DEMO
 az storage account create --name $DEMO_FUNC_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS --kind StorageV2
 
 # Create the storage account to be used by the function with storage Blob trigger
-az storage account create --name $DEMO_APP_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS --kind StorageV2
+# az storage account create --name $DEMO_APP_STORAGE_ACCT --location $LOCATION --resource-group $APP_PE_DEMO_RG --sku Standard_LRS --kind StorageV2
 
 # Create Blob container for trigger
-az storage container create --account-name $DEMO_APP_STORAGE_ACCT --name datafiles --auth-mode login
+# az storage container create --account-name $DEMO_APP_STORAGE_ACCT --name datafiles --auth-mode login
 
 # Create Table Store Table for results
-az storage table create --name FileLogs --account-name $DEMO_APP_STORAGE_ACCT 
+# az storage table create --name FileLogs --account-name $DEMO_APP_STORAGE_ACCT 
 
 # Create Premium Function Plan
 az functionapp plan create --name $DEMO_FUNC_PLAN --location $LOCATION --resource-group $APP_PE_DEMO_RG \
-    --min-instances 1 --sku EP1
+    --min-instances 1 --is-linux true --sku EP1
 
 # Create NodeJS Function App
 az functionapp create --name $DEMO_FUNC_NAME --storage-account $DEMO_FUNC_STORAGE_ACCT --plan $DEMO_FUNC_PLAN \
-  --resource-group $APP_PE_DEMO_RG --runtime node
+  --resource-group $APP_PE_DEMO_RG --os-type linux --functions-version 3 --runtime node
 
 # "enabledHostNames": [
-#    "nz2807win-demofunc-app.azurewebsites.net",
-#    "nz2807win-demofunc-app.scm.azurewebsites.net"
+#    "nznostorelinux-demofunc-app.azurewebsites.net",
+#    "nznostorelinux-demofunc-app.scm.azurewebsites.net"
 #  ]
 
 # "outboundIpAddresses": "168.62.51.220,13.92.179.222,52.168.2.55,13.92.181.253,168.62.180.253",
@@ -87,7 +87,7 @@ az functionapp create --name $DEMO_FUNC_NAME --storage-account $DEMO_FUNC_STORAG
 az functionapp identity assign -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME
 
 # Capture identity from output
-export APP_MSI="9e995fe8-e08e-4322-9e15-ee732d946c1c"
+export APP_MSI="8c1fdd27-6acf-4bbd-b5f2-7c0b055f6c7c"
 
 # Use Azure Function CLI Tools to deploy the app
 func azure functionapp publish $DEMO_FUNC_NAME
@@ -100,11 +100,11 @@ az keyvault create --location $LOCATION --name $DEMO_APP_KV --resource-group $AP
 az keyvault secret set --vault-name $DEMO_APP_KV --name "$KV_SECRET_APP_MESSAGE" --value "$KV_SECRET_APP_MESSAGE_VALUE"
 
 # Capture the URI of the secret we've created
-export KV_RESOURCE_ID="https://nz2807win-linux-demo-kv.vault.azure.net/secrets/APP-MESSAGE/177df624dcfb495f9799984667456ed6"
+export KV_RESOURCE_ID="https://nznostorelinux-linux-demo-kv.vault.azure.net/secrets/APP-MESSAGE/177df624dcfb495f9799984667456ed6"
 
 # Capture the KV URI
 # az keyvault show --name $DEMO_APP_KV --resource-group $APP_PE_DEMO_RG
-export KV_URI="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nz2807win-funcdemo-rg/providers/Microsoft.KeyVault/vaults/nz2807win-demo-kv1"
+export KV_URI="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nznostorelinux-funcdemo-rg/providers/Microsoft.KeyVault/vaults/"$DEMO_APP_KV
 
 # Set Policy for Web App to access secrets
 az keyvault set-policy -g  $APP_PE_DEMO_RG --name $DEMO_APP_KV --object-id $APP_MSI --secret-permissions get list --verbose
@@ -116,7 +116,7 @@ az storage account show-connection-string -g $APP_PE_DEMO_RG -n $DEMO_APP_STORAG
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_MESSAGE_VAR="$KV_SECRET_APP_MESSAGE"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings $KV_SECRET_APP_KV_NAME_VAR="$DEMO_APP_KV"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME \
-    --settings $DEMO_APP_STORAGE_CONFIG="XXXX"
+    --settings $DEMO_APP_STORAGE_CONFIG="xxxxxxx"
 
 # Set Private DNS Zone Settings
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings "WEBSITE_DNS_SERVER"="168.63.129.16"
@@ -135,11 +135,11 @@ az network private-endpoint create -g $APP_PE_DEMO_RG -n kvpe --vnet-name $DEMO_
 
 # Create App Storage Private Links
 # Get the Resource ID of the App Storage from the Portal, assign it to APP_STORAGE_RESOURCE_ID and create private link
-export APP_STORAGE_RESOURCE_ID="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nz2807win-funcdemo-rg/providers/Microsoft.Storage/storageAccounts/nz2807winappsstore"
-az network private-endpoint create -g $APP_PE_DEMO_RG -n funcblobpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
-    --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name funcblobpeconn -l $LOCATION --group-id "blob"
-az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
-    --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name functableconn -l $LOCATION --group-id "table"
+# export APP_STORAGE_RESOURCE_ID="/subscriptions/03228871-7f68-4594-b208-2d8207a65428/resourceGroups/nznostorelinux-funcdemo-rg/providers/Microsoft.Storage/storageAccounts/nznostorelinuxappsstore"
+# az network private-endpoint create -g $APP_PE_DEMO_RG -n funcblobpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
+#     --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name funcblobpeconn -l $LOCATION --group-id "blob"
+# az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
+#     --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name functableconn -l $LOCATION --group-id "table"
 
 # Creating Forward Lookup Zones in the DNS server you created above
 # You may be using root hints for DNS resolution on your custom DNS server.
@@ -154,23 +154,23 @@ az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name
 # az network vnet update -g $APP_PE_DEMO_RG -n $DEMO_VNET --dns-servers $DEMO_APP_VM_IP
 
 # Private DNS Zones
-export PRIVATE_KV_IP="10.0.2.4"
+export PRIVATE_KV_IP="10.2.2.4"
 export AZUREKEYVAULT_ZONE=privatelink.vaultcore.azure.net
 az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREKEYVAULT_ZONE
 az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREKEYVAULT_ZONE -n $DEMO_APP_KV -a $PRIVATE_KV_IP
 az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREKEYVAULT_ZONE --name kvdnsLink --registration-enabled false
 
-export PRIVATE_BLOB_IP="10.0.2.5"
-export AZUREBLOB_ZONE=privatelink.blob.core.windows.net
-az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREBLOB_ZONE
-az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREBLOB_ZONE -n $DEMO_APP_STORAGE_ACCT -a $PRIVATE_BLOB_IP
-az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREBLOB_ZONE --name blobdnsLink --registration-enabled false
+# export PRIVATE_BLOB_IP="10.0.2.5"
+# export AZUREBLOB_ZONE=privatelink.blob.core.windows.net
+# az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREBLOB_ZONE
+# az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREBLOB_ZONE -n $DEMO_APP_STORAGE_ACCT -a $PRIVATE_BLOB_IP
+# az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREBLOB_ZONE --name blobdnsLink --registration-enabled false
 
-export PRIVATE_TABLE_IP="10.0.2.6"
-export AZURETABLE_ZONE=privatelink.table.core.windows.net
-az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZURETABLE_ZONE
-az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZURETABLE_ZONE -n $DEMO_APP_STORAGE_ACCT -a $PRIVATE_TABLE_IP
-az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZURETABLE_ZONE --name tablednsLink --registration-enabled false
+# export PRIVATE_TABLE_IP="10.0.2.6"
+# export AZURETABLE_ZONE=privatelink.table.core.windows.net
+# az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZURETABLE_ZONE
+# az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZURETABLE_ZONE -n $DEMO_APP_STORAGE_ACCT -a $PRIVATE_TABLE_IP
+# az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZURETABLE_ZONE --name tablednsLink --registration-enabled false
 
 #
 # Change KV firewall - allow only PE access
@@ -190,7 +190,7 @@ az functionapp restart -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME
 # Get the webapp resource id
 az functionapp show -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME
 
-export FUNC_APP_RESOURCE_ID="/subscriptions/fbd6916d-a76d-48f0-9b03-f1d9610d7970/resourceGroups/nz2807win-pedemo-rg/providers/Microsoft.Web/sites/nz2807win-simplejava-app"
+export FUNC_APP_RESOURCE_ID="/subscriptions/fbd6916d-a76d-48f0-9b03-f1d9610d7970/resourceGroups/nznostorelinux-pedemo-rg/providers/Microsoft.Web/sites/nznostorelinux-simplejava-app"
 
 # Create Web App Private Link
 az network private-endpoint create -g $APP_PE_DEMO_RG -n funcpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
