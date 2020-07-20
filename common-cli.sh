@@ -1,7 +1,7 @@
 az keyvault list-deleted -o table
 
-az keyvault purge --name nzwestus201-kv1
-az keyvault purge --name nzwineast-demo-kv1
+az keyvault purge --name nzlineast21-demo-kv1
+az keyvault purge --name nzmqkv
 az keyvault purge --name nz2807win-demo-kv1
 
 

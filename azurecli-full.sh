@@ -1,9 +1,9 @@
 # Please provide your subscription id here
 export APP_SUBSCRIPTION_ID=03228871-7f68-4594-b208-2d8207a65428
 # Please provide your unique prefix to make sure that your resources are unique
-export APP_PREFIX=nzlineast01
+export APP_PREFIX=nzlineast21
 # Please provide your region
-export LOCATION=EastUS
+export LOCATION=EastUS2
 # Please provide your OS
 export IS_LINUX=true
 export OS_TYPE=Linux #Windows
