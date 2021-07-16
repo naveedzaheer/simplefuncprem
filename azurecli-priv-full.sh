@@ -1,12 +1,12 @@
 # Please provide your subscription id here
 export APP_SUBSCRIPTION_ID=03228871-7f68-4594-b208-2d8207a65428
 # Please provide your unique prefix to make sure that your resources are unique
-export APP_PREFIX=nzlinwest2d
+export APP_PREFIX=nzlinwest2e
 # Please provide your region
-export LOCATION=WestUS2
+export LOCATION=EastUS2
 # Please provide your OS
 export IS_LINUX=true
-export OS_TYPE=Linux #Windows
+export OS_TYPE=Linux #Windows #Linux
 
 export VNET_PREFIX="10.0."
 
@@ -78,9 +78,14 @@ az storage container create --account-name $DEMO_APP_STORAGE_ACCT --name datafil
 az storage table create --name FileLogs --account-name $DEMO_APP_STORAGE_ACCT 
 
 # Create Premium Function Plan
-az functionapp plan create --name $DEMO_FUNC_PLAN --location $LOCATION --resource-group $APP_PE_DEMO_RG \
-    --min-instances 1 --is-linux $IS_LINUX --sku EP1
-
+if [ $OS_TYPE == "LINUX" ]
+then
+    az functionapp plan create --name $DEMO_FUNC_PLAN --location $LOCATION --resource-group $APP_PE_DEMO_RG \
+        --min-instances 1 --is-linux $IS_LINUX --sku EP1
+else
+    az functionapp plan create --name $DEMO_FUNC_PLAN --location $LOCATION --resource-group $APP_PE_DEMO_RG \
+        --min-instances 1 --sku EP1
+fi
 # Create NodeJS Function App
 az functionapp create --name $DEMO_FUNC_NAME --storage-account $DEMO_FUNC_STORAGE_ACCT --plan $DEMO_FUNC_PLAN \
   --resource-group $APP_PE_DEMO_RG --os-type $OS_TYPE --runtime node --functions-version 3
@@ -120,6 +125,7 @@ az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --se
 # Set Private DNS Zone Settings
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings "WEBSITE_DNS_SERVER"="168.63.129.16"
 az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings "WEBSITE_VNET_ROUTE_ALL"="1"
+az functionapp config appsettings set -g $APP_PE_DEMO_RG -n $DEMO_FUNC_NAME --settings "WEBSITE_CONTENTOVERVNET"="1"
 #
 # Create Private Links
 #
@@ -132,13 +138,46 @@ az network vnet subnet update -g $APP_PE_DEMO_RG -n $DEMO_VNET_PL_SUBNET --vnet-
 PRIVATE_KV_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n kvpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
     --private-connection-resource-id "$KV_URI" --connection-name kvpeconn -l $LOCATION --group-id "vault" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
 
+# Create Func Storage Private Links
+# Get the Resource ID of the App Storage from the Portal, assign it to APP_STORAGE_RESOURCE_ID and create private link
+export FUNC_STORAGE_RESOURCE_ID="/subscriptions/"$APP_SUBSCRIPTION_ID"/resourceGroups/"$APP_PE_DEMO_RG"/providers/Microsoft.Storage/storageAccounts/"$DEMO_FUNC_STORAGE_ACCT
+PRIVATE_FUNC_BLOB_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n funcblobpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
+    --private-connection-resource-id "$FUNC_STORAGE_RESOURCE_ID" --connection-name funcblobpeconn -l $LOCATION --group-id "blob" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
+PRIVATE_FUNC_TABLE_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
+    --private-connection-resource-id "$FUNC_STORAGE_RESOURCE_ID" --connection-name functableconn -l $LOCATION --group-id "table" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
+PRIVATE_FUNC_FILE_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n funcfilepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
+    --private-connection-resource-id "$FUNC_STORAGE_RESOURCE_ID" --connection-name funcfilepeconn -l $LOCATION --group-id "file" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
+PRIVATE_FUNC_QUEUE_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n funcqueuepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
+    --private-connection-resource-id "$FUNC_STORAGE_RESOURCE_ID" --connection-name funcqueueconn -l $LOCATION --group-id "queue" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
+
+# Create Func Storage Private Zones
+export AZUREBLOB_ZONE=privatelink.blob.core.windows.net
+az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREBLOB_ZONE
+az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREBLOB_ZONE -n $DEMO_FUNC_STORAGE_ACCT -a $PRIVATE_FUNC_BLOB_IP
+az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREBLOB_ZONE --name blobdnsLink --registration-enabled false
+
+export AZURETABLE_ZONE=privatelink.table.core.windows.net
+az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZURETABLE_ZONE
+az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZURETABLE_ZONE -n $DEMO_FUNC_STORAGE_ACCT -a $PRIVATE_FUNC_TABLE_IP
+az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZURETABLE_ZONE --name tablednsLink --registration-enabled false
+
+export AZUREFILE_ZONE=privatelink.file.core.windows.net
+az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREFILE_ZONE
+az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREFILE_ZONE -n $DEMO_FUNC_STORAGE_ACCT -a $PRIVATE_FUNC_FILE_IP
+az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREFILE_ZONE --name blobdnsLink --registration-enabled false
+
+export AZUREQUEUE_ZONE=privatelink.queue.core.windows.net
+az network private-dns zone create -g $APP_PE_DEMO_RG -n $AZUREQUEUE_ZONE
+az network private-dns record-set a add-record -g $APP_PE_DEMO_RG -z $AZUREQUEUE_ZONE -n $DEMO_FUNC_STORAGE_ACCT -a $PRIVATE_FUNC_QUEUE_IP
+az network private-dns link vnet create -g $APP_PE_DEMO_RG --virtual-network $DEMO_VNET --zone-name $AZUREQUEUE_ZONE --name tablednsLink --registration-enabled false
+
 # Create App Storage Private Links
 # Get the Resource ID of the App Storage from the Portal, assign it to APP_STORAGE_RESOURCE_ID and create private link
 export APP_STORAGE_RESOURCE_ID="/subscriptions/"$APP_SUBSCRIPTION_ID"/resourceGroups/"$APP_PE_DEMO_RG"/providers/Microsoft.Storage/storageAccounts/"$DEMO_APP_STORAGE_ACCT
 PRIVATE_APP_BLOB_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n funcblobpe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
-    --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name funcblobpeconn -l $LOCATION --group-id "blob" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
+    --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name appblobpeconn -l $LOCATION --group-id "blob" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
 PRIVATE_APP_TABLE_IP=$(az network private-endpoint create -g $APP_PE_DEMO_RG -n functablepe --vnet-name $DEMO_VNET --subnet $DEMO_VNET_PL_SUBNET \
-    --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name functableconn -l $LOCATION --group-id "table" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
+    --private-connection-resource-id "$APP_STORAGE_RESOURCE_ID" --connection-name apptableconn -l $LOCATION --group-id "table" --query customDnsConfigs[0].ipAddresses[0] -o tsv)
 
 # Creating Forward Lookup Zones in the DNS server you created above
 # You may be using root hints for DNS resolution on your custom DNS server.
