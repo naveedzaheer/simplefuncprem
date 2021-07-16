@@ -1,5 +1,5 @@
 # Please provide your subscription id here
-export APP_SUBSCRIPTION_ID=03228871-7f68-4594-b208-2d8207a65428
+export APP_SUBSCRIPTION_ID=XXXXXX
 # Please provide your unique prefix to make sure that your resources are unique
 export APP_PREFIX=nzlinwest2e
 # Please provide your region
